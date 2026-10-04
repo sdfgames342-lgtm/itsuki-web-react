@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ParsedUrl } from '../lib/urlParser';
 import { sb, hasSupabase } from '../lib/supabase';
+import { LiveFeed } from '../components/LiveFeed';
 
 const SESSION_KEY = 'itsuki.session';
 
@@ -177,3 +178,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: '"JetBrains Mono", monospace',
   },
 };
+{/* ─── Live feed ─────────────────────────────── */}
+<section style={styles.section}>
+<LiveFeed />
+</section>
+
