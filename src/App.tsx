@@ -4,7 +4,6 @@ import { parseUrl, type ParsedUrl } from './lib/urlParser';
 import { RouteGuard } from './router/RouteGuard';
 import { ItalianLayout } from './layouts/ItalianLayout';
 import { StealthLayout } from './layouts/StealthLayout';
-import { AdminLayout } from './layouts/AdminLayout';
 import { PublicGameLayout } from './layouts/PublicGameLayout';
 import { HomePage } from './pages/HomePage';
 import { ControlPage } from './pages/ControlPage';
@@ -12,6 +11,7 @@ import { AdminPage } from './pages/AdminPage';
 import { StatsPage } from './pages/StatsPage';
 import { StealthPage } from './pages/StealthPage';
 import { GamePage } from './pages/GamePage';
+import { LoginPage } from './pages/LoginPage';
 import { Fake404 } from './components/Fake404';
 
 function renderByKind(url: ParsedUrl) {
@@ -19,7 +19,7 @@ function renderByKind(url: ParsedUrl) {
     case 'ctrl':
       return <StealthLayout><ControlPage url={url} /></StealthLayout>;
     case 'admin':
-      return <AdminLayout><AdminPage url={url} /></AdminLayout>;
+      return <AdminPage url={url} />;
     case 'stats':
       return <ItalianLayout><StatsPage url={url} /></ItalianLayout>;
     case 'stealth':
@@ -31,19 +31,21 @@ function renderByKind(url: ParsedUrl) {
 
 export function App() {
   const location = useLocation();
+  const path = location.pathname;
 
-  const result = useMemo(
-    () => parseUrl(location.pathname),
-    [location.pathname],
-  );
+  const result = useMemo(() => parseUrl(path), [path]);
 
-  const isRoot =
-    location.pathname === '/' ||
-    location.pathname === '' ||
-    /^\/+$/.test(location.pathname);
+  // 1. Root → Home
+  if (path === '/' || path === '' || /^\/+$/.test(path)) {
+    return <HomePage />;
+  }
 
-  if (isRoot) return <HomePage />;
+  // 2. Login (sin URL parse)
+  if (path === '/login' || path === '/login/') {
+    return <LoginPage />;
+  }
 
+  // 3. URL con 5 args
   if (!result.ok) return <Fake404 />;
 
   return (

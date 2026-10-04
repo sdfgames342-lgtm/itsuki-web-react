@@ -27,6 +27,12 @@ export function HomePage() {
       showFooter={<CulturalFooter />}
     >
       <LedgerCard output={output} />
+
+      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.75rem' }}>
+        <a href="/login" style={{ color: 'rgba(255,183,197,0.6)', textDecoration: 'none' }}>
+          ¿Ya tenés cuenta? Iniciar sesión →
+        </a>
+      </p>
     </ItalianLayout>
   );
 }

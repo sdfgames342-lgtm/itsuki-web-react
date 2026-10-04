@@ -12,14 +12,14 @@ export interface RouteGuardProps {
 }
 
 export function RouteGuard({ url, children }: RouteGuardProps) {
-  const [state, setState] = useState<'loading' | 'ok' | 'denied'>('loading');
+  const [state, setState] = useState<'loading' | 'ok' | 'denied' | 'need_login'>('loading');
 
   useEffect(() => {
     let cancelled = false;
     setState('loading');
 
     (async () => {
-      // 1. Sin Supabase configurado → modo dev, permitir
+      // 1. Sin Supabase → dev, permitir
       if (!hasSupabase || !sb) {
         console.warn('[RouteGuard] Supabase no configurado, modo dev');
         if (!cancelled) setState('ok');
@@ -39,9 +39,9 @@ export function RouteGuard({ url, children }: RouteGuardProps) {
         sessionStorage.removeItem(SESSION_KEY);
       }
 
-      // 3. Requerir token en URL
+      // 3. Sin token URL → redirigir a login
       if (!url.token) {
-        if (!cancelled) setState('denied');
+        if (!cancelled) setState('need_login');
         return;
       }
 
@@ -71,7 +71,14 @@ export function RouteGuard({ url, children }: RouteGuardProps) {
     return () => { cancelled = true; };
   }, [url]);
 
-  if (state === 'loading') return <LoadingSkeleton />;
-  if (state === 'denied')  return <Fake404 />;
+  if (state === 'loading')     return <LoadingSkeleton />;
+  if (state === 'denied')      return <Fake404 />;
+  if (state === 'need_login') {
+    // Redirigir a /login (replace para no dejar historial)
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
+    return <LoadingSkeleton />;
+  }
   return <>{children}</>;
 }
