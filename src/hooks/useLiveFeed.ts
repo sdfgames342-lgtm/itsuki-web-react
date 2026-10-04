@@ -24,7 +24,10 @@ export function useLiveFeed(limit = 30) {
       return;
     }
 
-    const channel = sb
+    // FIX: capturar sb en local const para que TS narrowee
+    const client = sb;
+
+    const channel = client
       .channel('itsuki:live-feed')
       .on(
         'postgres_changes',
@@ -44,7 +47,7 @@ export function useLiveFeed(limit = 30) {
 
     return () => {
       mounted.current = false;
-      sb.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, [limit]);
 
