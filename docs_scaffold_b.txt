@@ -1,0 +1,20 @@
+▶ repo=/c/Users/ENSAC/itsuki-web-react backups=.bak_20261004_215106
+
+══ 1. useReconnect.ts ══
+  ✓ useReconnect.ts
+
+══ 2. ConnectionBadge.tsx ══
+  ✓ ConnectionBadge.tsx
+
+══ 3. MembersTab.tsx ══
+  ✓ MembersTab.tsx
+
+══ 4. RulesTab.tsx ══
+  ✓ RulesTab.tsx
+
+══ 5. SettingsTab.tsx ══
+  ✓ SettingsTab.tsx
+
+══ 6. AdminPage.tsx: usar tabs nuevas + badge ══
+  · backup src/pages/AdminPage.tsx
+no se encontr� Python; ejecutar sin argumentos para instalar desde el Microsoft Store o deshabilitar este acceso directo desde Configuraci�n > Aplicaciones > Configuraci�n avanzada de aplicaciones > Alias de ejecuci�n de aplicaciones.

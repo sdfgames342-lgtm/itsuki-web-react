@@ -3,9 +3,6 @@ import type { ParsedUrl } from '../lib/urlParser';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { LiveFeed } from '../components/LiveFeed';
 import { sb } from '../lib/supabase';
-import { MembersTab } from './tabs/MembersTab';
-import { RulesTab }   from './tabs/RulesTab';
-import { SettingsTab } from './tabs/SettingsTab';
 
 const SESSION_KEY = 'itsuki.session';
 
@@ -31,9 +28,9 @@ export function AdminPage({ url }: { url: ParsedUrl }) {
       onLogout={handleLogout}
     >
       {tab === 'overview' && <OverviewTab />}
-      {tab === 'members'  && <MembersTab  chatId={chatId} />}
-      {tab === 'rules'    && <RulesTab    chatId={chatId} />}
-      {tab === 'settings' && <SettingsTab chatId={chatId} />}
+      {tab === 'members'  && <MembersTab />}
+      {tab === 'rules'    && <RulesTab />}
+      {tab === 'settings' && <SettingsTab />}
     </AdminLayout>
   );
 }
@@ -50,8 +47,32 @@ function OverviewTab() {
   );
 }
 
+function MembersTab() {
+  return (
+    <>
+      <h2 style={styles.h2}>👥 Miembros</h2>
+      <p style={styles.muted}>Lista de admins del grupo.</p>
+    </>
+  );
+}
 
+function RulesTab() {
+  return (
+    <>
+      <h2 style={styles.h2}>📜 Reglas</h2>
+      <p style={styles.muted}>Editor de reglas del grupo.</p>
+    </>
+  );
+}
 
+function SettingsTab() {
+  return (
+    <>
+      <h2 style={styles.h2}>⚙️ Ajustes</h2>
+      <p style={styles.muted}>Configuración del panel.</p>
+    </>
+  );
+}
 
 const styles: Record<string, React.CSSProperties> = {
   h2: {
