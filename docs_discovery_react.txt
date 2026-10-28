@@ -1,0 +1,899 @@
+── 1. App.tsx ──
+import { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { parseUrl, type ParsedUrl } from './lib/urlParser';
+import { RouteGuard } from './router/RouteGuard';
+import { ItalianLayout } from './layouts/ItalianLayout';
+import { StealthLayout } from './layouts/StealthLayout';
+import { PublicGameLayout } from './layouts/PublicGameLayout';
+import { HomePage } from './pages/HomePage';
+import { ControlPage } from './pages/ControlPage';
+import { AdminPage } from './pages/AdminPage';
+import { StatsPage } from './pages/StatsPage';
+import { StealthPage } from './pages/StealthPage';
+import { GamePage } from './pages/GamePage';
+import { LoginPage } from './pages/LoginPage';
+import { Fake404 } from './components/Fake404';
+
+function renderByKind(url: ParsedUrl) {
+  switch (url.kind) {
+    case 'ctrl':
+      return <StealthLayout><ControlPage url={url} /></StealthLayout>;
+    case 'admin':
+      return <AdminPage url={url} />;
+    case 'stats':
+      return <ItalianLayout><StatsPage url={url} /></ItalianLayout>;
+    case 'stealth':
+      return <StealthLayout><StealthPage url={url} /></StealthLayout>;
+    case 'game':
+      return <PublicGameLayout><GamePage url={url} /></PublicGameLayout>;
+  }
+}
+
+export function App() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  const result = useMemo(() => parseUrl(path), [path]);
+
+  // 1. Root → Home
+  if (path === '/' || path === '' || /^\/+$/.test(path)) {
+    return <HomePage />;
+  }
+
+  // 2. Login (sin URL parse)
+  if (path === '/login' || path === '/login/') {
+    return <LoginPage />;
+  }
+
+  // 3. URL con 5 args
+  if (!result.ok) return <Fake404 />;
+
+  return (
+    <RouteGuard url={result.url}>
+      {renderByKind(result.url)}
+    </RouteGuard>
+  );
+}
+
+── 2. main.tsx ──
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
+import { App } from './App';
+import './index.css';
+
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <HelmetProvider>
+      <BrowserRouter basename={basename}>
+        <App />
+      </BrowserRouter>
+    </HelmetProvider>
+  </React.StrictMode>,
+);
+
+── 3. layouts/ ──
+AdminLayout.tsx
+ItalianLayout.tsx
+PublicGameLayout.tsx
+StealthLayout.tsx
+── src/layouts/AdminLayout.tsx ──
+import { useEffect, useState, type ReactNode } from 'react';
+
+export interface AdminTab {
+  key: string;
+  label: string;
+  icon: string;
+}
+
+export const ADMIN_TABS: AdminTab[] = [
+  { key: 'overview', label: 'Resumen',  icon: '📊' },
+  { key: 'members',  label: 'Miembros', icon: '👥' },
+  { key: 'rules',    label: 'Reglas',   icon: '📜' },
+  { key: 'settings', label: 'Ajustes',  icon: '⚙️' },
+];
+
+export interface AdminLayoutProps {
+  chatId: number;
+  chatTitle?: string;
+  tab: string;
+  onTabChange: (key: string) => void;
+  onLogout: () => void;
+  children: ReactNode;
+}
+
+export function AdminLayout({
+  chatId, chatTitle, tab, onTabChange, onLogout, children,
+}: AdminLayoutProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Cerrar sidebar al cambiar de tab (mobile)
+  useEffect(() => { setMobileOpen(false); }, [tab]);
+
+  // Bloquear scroll del body cuando sidebar está abierto en mobile
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  // Escape cierra el sidebar
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
+
+  return (
+    <div style={styles.shell}>
+      {/* Overlay mobile */}
+      {mobileOpen && (
+        <div
+          style={styles.overlay}
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        style={{
+          ...styles.sidebar,
+          ...(mobileOpen ? styles.sidebarOpen : {}),
+        }}
+        aria-label="Navegación del panel"
+      >
+        <div style={styles.sidebarHeader}>
+          <span style={styles.sidebarTitle}>Itsuki · Admin</span>
+          <button
+            type="button"
+            style={styles.closeBtn}
+            onClick={() => setMobileOpen(false)}
+            aria-label="Cerrar menú"
+          >
+            ✕
+          </button>
+        </div>
+
+        <nav style={styles.nav}>
+          <ul style={styles.navList}>
+            {ADMIN_TABS.map((t) => {
+              const active = t.key === tab;
+              return (
+                <li key={t.key}>
+                  <button
+                    type="button"
+                    onClick={() => onTabChange(t.key)}
+                    aria-current={active ? 'page' : undefined}
+                    style={{
+                      ...styles.navItem,
+                      ...(active ? styles.navItemActive : {}),
+                    }}
+                  >
+                    <span style={styles.navIcon} aria-hidden="true">{t.icon}</span>
+                    <span>{t.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div style={styles.sidebarFooter}>
+          <span style={styles.chatBadge} title={`chat_id: ${chatId}`}>
+            <code>{chatId}</code>
+          </span>
+        </div>
+      </aside>
+
+      {/* Content */}
+      <div style={styles.content}>
+        <header style={styles.topbar}>
+          <button
+            type="button"
+            style={styles.hamburger}
+            onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menú"
+            aria-expanded={mobileOpen}
+            aria-controls="admin-sidebar"
+          >
+            ☰
+          </button>
+          <h1 style={styles.topbarTitle}>
+            {chatTitle || `Grupo ${chatId}`}
+          </h1>
+          <button
+            type="button"
+            style={styles.logoutBtn}
+            onClick={onLogout}
+          >
+            Cerrar sesión
+          </button>
+        </header>
+
+        <main style={styles.main}>
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  shell: {
+    display: 'flex',
+    minHeight: '100dvh',
+    fontFamily: '"JetBrains Mono", monospace',
+    color: '#f0e6e9',
+    background: '#0a0809',
+  },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    zIndex: 40,
+  },
+  sidebar: {
+    position: 'fixed',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 260,
+    transform: 'translateX(-100%)',
+    transition: 'transform 0.25s ease',
+    background: 'rgba(15,12,14,0.98)',
+    borderRight: '1px solid rgba(255,183,197,0.2)',
+    zIndex: 50,
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '1.5rem 1rem',
+  },
+  sidebarOpen: {
+    transform: 'translateX(0)',
+  },
+  sidebarHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+  },
+  sidebarTitle: {
+    fontFamily: '"Playfair Display", serif',
+    fontStyle: 'italic',
+    color: '#FFB7C5',
+    fontSize: '1.1rem',
+  },
+  closeBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'rgba(255,183,197,0.7)',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    padding: '0.25rem 0.5rem',
+  },
+  nav: { flex: 1 },
+  navList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+  navItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    width: '100%',
+    padding: '0.7rem 0.9rem',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    color: 'rgba(240,230,233,0.75)',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: '0.9rem',
+    textAlign: 'left',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
+  },
+  navItemActive: {
+    background: 'rgba(255,183,197,0.15)',
+    color: '#FFB7C5',
+  },
+  navIcon: { fontSize: '1.1rem' },
+  sidebarFooter: {
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(255,183,197,0.15)',
+  },
+  chatBadge: {
+    display: 'inline-block',
+    padding: '0.3rem 0.6rem',
+    background: 'rgba(255,183,197,0.1)',
+    border: '1px solid rgba(255,183,197,0.25)',
+    borderRadius: '4px',
+    fontSize: '0.7rem',
+    color: 'rgba(255,183,197,0.7)',
+  },
+  content: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+  },
+  topbar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '1rem 1.5rem',
+    borderBottom: '1px solid rgba(255,183,197,0.15)',
+    background: 'rgba(15,12,14,0.9)',
+    backdropFilter: 'blur(12px)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 30,
+  },
+  hamburger: {
+    background: 'transparent',
+    border: '1px solid rgba(255,183,197,0.3)',
+    borderRadius: '6px',
+    color: '#FFB7C5',
+    padding: '0.4rem 0.7rem',
+    fontSize: '1rem',
+    cursor: 'pointer',
+  },
+  topbarTitle: {
+    flex: 1,
+    margin: 0,
+    fontSize: '0.95rem',
+    fontWeight: 500,
+    color: 'rgba(255,183,197,0.85)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  logoutBtn: {
+    background: 'transparent',
+    color: '#FFB7C5',
+    border: '1px solid rgba(255,183,197,0.4)',
+    padding: '0.4rem 0.9rem',
+    borderRadius: '6px',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: '0.8rem',
+    cursor: 'pointer',
+  },
+  main: {
+    flex: 1,
+    padding: '1.5rem',
+    maxWidth: 1200,
+    width: '100%',
+    margin: '0 auto',
+  },
+};
+── src/layouts/ItalianLayout.tsx ──
+import { type ReactNode } from 'react';
+import { DualBg } from '../components/DualBg';
+
+export interface ItalianLayoutProps {
+  children: ReactNode;
+  /** Contenido que va dentro del main (debajo del header). */
+  showHeader?: ReactNode;
+  showFooter?: ReactNode;
+}
+
+export function ItalianLayout({
+  children,
+  showHeader,
+  showFooter,
+}: ItalianLayoutProps) {
+  return (
+    <>
+      <DualBg />
+      {showHeader}
+      {children}
+      {showFooter}
+    </>
+  );
+}
+── src/layouts/PublicGameLayout.tsx ──
+import { type ReactNode } from 'react';
+
+export function PublicGameLayout({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      {children}
+    </div>
+  );
+}
+── src/layouts/StealthLayout.tsx ──
+import { type ReactNode } from 'react';
+
+export function StealthLayout({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ minHeight: '100dvh' }}>
+      {children}
+    </div>
+  );
+}
+
+── 4. pages/ ──
+AdminPage.tsx
+ControlPage.tsx
+GamePage.tsx
+HomePage.tsx
+LoginPage.tsx
+StatsPage.tsx
+StealthPage.tsx
+── src/pages/AdminPage.tsx (head -40) ──
+import { useState } from 'react';
+import type { ParsedUrl } from '../lib/urlParser';
+import { AdminLayout } from '../layouts/AdminLayout';
+import { LiveFeed } from '../components/LiveFeed';
+import { sb } from '../lib/supabase';
+
+const SESSION_KEY = 'itsuki.session';
+
+export function AdminPage({ url }: { url: ParsedUrl }) {
+  const [tab, setTab] = useState('overview');
+
+  const chatId = url.chatId ?? 0;
+
+  const handleLogout = async () => {
+    const token = sessionStorage.getItem(SESSION_KEY);
+    if (token && sb) {
+      try { await sb.rpc('web_logout', { p_session: token }); } catch { /* noop */ }
+    }
+    sessionStorage.clear();
+    location.href = '/';
+  };
+
+  return (
+    <AdminLayout
+      chatId={chatId}
+      tab={tab}
+      onTabChange={setTab}
+      onLogout={handleLogout}
+    >
+      {tab === 'overview' && <OverviewTab />}
+      {tab === 'members'  && <MembersTab />}
+      {tab === 'rules'    && <RulesTab />}
+      {tab === 'settings' && <SettingsTab />}
+    </AdminLayout>
+  );
+}
+
+// ─── Tabs ──────────────────────────────────────────────
+
+function OverviewTab() {
+── src/pages/ControlPage.tsx (head -40) ──
+import { useEffect, useState } from 'react';
+import type { ParsedUrl } from '../lib/urlParser';
+import { sb, hasSupabase } from '../lib/supabase';
+import { LiveFeed } from '../components/LiveFeed';
+
+const SESSION_KEY = 'itsuki.session';
+
+interface SessionInfo {
+  user_id: number;
+  kind: string;
+  name_page: string;
+  expires_at: number;
+}
+
+export function ControlPage({ url }: { url: ParsedUrl }) {
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      // 1. Sin Supabase → dev
+      if (!hasSupabase || !sb) {
+        setSession({ user_id: url.telegramId, kind: url.kind, name_page: url.namePage ?? '', expires_at: 0 });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Leer session de sessionStorage
+      const token = sessionStorage.getItem(SESSION_KEY);
+      if (!token) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      // 3. Validar contra backend
+      const { data } = await sb.rpc('web_validate_session', { p_session: token });
+      if (cancelled) return;
+
+── src/pages/GamePage.tsx (head -40) ──
+import type { ParsedUrl } from '../lib/urlParser';
+
+export function GamePage({ url }: { url: ParsedUrl }) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        textAlign: 'center',
+      }}
+    >
+      <div>
+        <h1
+          style={{
+            fontFamily: '"Playfair Display", serif',
+            fontStyle: 'italic',
+            color: '#FFB7C5',
+            fontSize: 'clamp(1.5rem, 5vw, 2.4rem)',
+            marginBottom: '1rem',
+          }}
+        >
+          ⟐ {url.gamePage} ⟐
+        </h1>
+        <p style={{ fontSize: '0.85rem', color: 'rgba(255,183,197,0.6)' }}>
+          {url.chatId !== null ? `Chat: ${url.chatId}` : 'Sin grupo'}
+          {url.query && ` · ?${url.query}`}
+        </p>
+      </div>
+    </div>
+  );
+}
+── src/pages/HomePage.tsx (head -40) ──
+import { useState } from 'react';
+import { StickyHeader } from '../components/StickyHeader';
+import { LedgerCard } from '../components/LedgerCard';
+import { CulturalFooter } from '../components/CulturalFooter';
+import { ItalianLayout } from '../layouts/ItalianLayout';
+import { PHRASES, EASTER_EGGS, pickRandom, type PhraseKey } from '../lib/phrases';
+
+export function HomePage() {
+  const [output, setOutput] = useState('⟐ ESCANEANDO ENTE BIOLÓGICO... ⟐');
+
+  const handleAction = (key: string, telegram?: boolean) => {
+    if (telegram) {
+      window.location.href = 'https://t.me/ItsukiNakanoUserBot';
+      return;
+    }
+    const list = PHRASES[key as PhraseKey] ?? PHRASES.dictamen;
+    setOutput(pickRandom(list));
+  };
+
+  const handleEasterEgg = () => {
+    setOutput(`🥚 EASTER EGG → ${pickRandom(EASTER_EGGS)}`);
+  };
+
+  return (
+    <ItalianLayout
+      showHeader={<StickyHeader onAction={handleAction} onEasterEgg={handleEasterEgg} />}
+      showFooter={<CulturalFooter />}
+    >
+      <LedgerCard output={output} />
+
+      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.75rem' }}>
+        <a href="/login" style={{ color: 'rgba(255,183,197,0.6)', textDecoration: 'none' }}>
+          ¿Ya tenés cuenta? Iniciar sesión →
+        </a>
+      </p>
+    </ItalianLayout>
+  );
+}
+── src/pages/LoginPage.tsx (head -40) ──
+import { useState } from 'react';
+import { sb, hasSupabase } from '../lib/supabase';
+import { accessLevelToAP } from '../lib/apHex';
+import { extraDigit } from '../lib/extraDigit';
+
+const SESSION_KEY = 'itsuki.session';
+
+export function LoginPage() {
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const uid = Number(userId.trim());
+    if (!Number.isInteger(uid) || uid <= 0) {
+      setError('User ID inválido');
+      return;
+    }
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    if (!hasSupabase || !sb) {
+      setError('Backend no configurado');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error: rpcErr } = await sb.rpc('web_login', {
+        p_user_id:     uid,
+        p_password:    password,
+        p_ip:          null,
+        p_user_agent:  navigator.userAgent.slice(0, 200),
+        p_session_ttl: 900,
+── src/pages/StatsPage.tsx (head -40) ──
+import type { ParsedUrl } from '../lib/urlParser';
+
+export function StatsPage({ url }: { url: ParsedUrl }) {
+  return (
+    <div style={{ padding: '3rem 1rem', maxWidth: 800, margin: '0 auto' }}>
+      <h2
+        style={{
+          fontFamily: '"Playfair Display", serif',
+          fontStyle: 'italic',
+          color: '#FFB7C5',
+          fontSize: '1.5rem',
+          marginBottom: '1rem',
+        }}
+      >
+        📊 Stats
+      </h2>
+
+      <p style={{ fontSize: '0.85rem', color: 'rgba(255,183,197,0.6)' }}>
+        Página: <code>{url.namePage}</code>
+        {url.chatId !== null && <> · Chat: <code>{url.chatId}</code></>}
+      </p>
+    </div>
+  );
+}
+── src/pages/StealthPage.tsx (head -40) ──
+import type { ParsedUrl } from '../lib/urlParser';
+
+export function StealthPage({ url }: { url: ParsedUrl }) {
+  return (
+    <div style={{ padding: '3rem 1rem' }}>
+      <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.9rem' }}>
+        Stealth · {url.namePage}
+      </p>
+    </div>
+  );
+}
+
+── 5. hooks/ ──
+useLiveFeed.ts
+useTypingEffect.ts
+── src/hooks/useLiveFeed.ts ──
+import { useEffect, useRef, useState } from 'react';
+import { sb, hasSupabase } from '../lib/supabase';
+
+export interface LiveEvent {
+  id: number;
+  ts: number;
+  kind: string;
+  chat_id?: number | null;
+}
+
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'offline';
+
+export function useLiveFeed(limit = 30) {
+  const [events, setEvents] = useState<LiveEvent[]>([]);
+  const [status, setStatus] = useState<ConnectionStatus>(
+    hasSupabase ? 'connecting' : 'offline',
+  );
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    if (!hasSupabase || !sb) {
+      setStatus('offline');
+      return;
+    }
+
+    // FIX: capturar sb en local const para que TS narrowee
+    const client = sb;
+
+    const channel = client
+      .channel('itsuki:live-feed')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'web_live_feed' },
+        (payload) => {
+          if (!mounted.current) return;
+          const ev = payload.new as LiveEvent;
+          setEvents((prev) => [ev, ...prev].slice(0, limit));
+        },
+      )
+      .subscribe((st) => {
+        if (!mounted.current) return;
+        if (st === 'SUBSCRIBED') setStatus('connected');
+        else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') setStatus('disconnected');
+        else if (st === 'CLOSED') setStatus('disconnected');
+      });
+
+    return () => {
+      mounted.current = false;
+      client.removeChannel(channel);
+    };
+  }, [limit]);
+
+  return { events, status };
+}
+── src/hooks/useTypingEffect.ts ──
+import { useEffect, useState } from 'react';
+
+export function useTypingEffect(text: string, speed = 20): string {
+  const [displayed, setDisplayed] = useState('');
+
+  useEffect(() => {
+    setDisplayed('');
+    if (!text) return;
+
+    let i = 0;
+    const id = window.setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) window.clearInterval(id);
+    }, speed);
+
+    return () => window.clearInterval(id);
+  }, [text, speed]);
+
+  return displayed;
+}
+
+── 6. lib/ ──
+__test__
+apHex.ts
+extraDigit.ts
+phrases.ts
+supabase.ts
+urlParser.ts
+── src/lib/apHex.ts (head -30) ──
+/** A-P Hex Codec · 0→A 1→B ... 9→J a→K b→L c→M d→N e→O f→P */
+const HEX = '0123456789abcdef';
+const AP  = 'ABCDEFGHIJKLMNOP';
+const ENC: Record<string, string> = {};
+const DEC: Record<string, string> = {};
+for (let i = 0; i < 16; i++) { ENC[HEX[i]] = AP[i]; DEC[AP[i]] = HEX[i]; }
+
+export function toAP(hexStr: string): string {
+  return hexStr.toLowerCase().split('').map((c) => ENC[c] ?? c).join('');
+}
+export function fromAP(apStr: string): string {
+  return apStr.toUpperCase().split('').map((c) => DEC[c] ?? c).join('');
+}
+export function intToAP(n: number): string {
+  if (n < 0 || !Number.isInteger(n)) throw new Error('intToAP: >=0 integer');
+  return toAP(n.toString(16));
+}
+export function apToInt(s: string): number { return parseInt(fromAP(s), 16); }
+export function accessLevelToAP(level: number): string { return intToAP(level); }
+export function apToAccessLevel(s: string): number      { return apToInt(s); }
+
+const AP_RE = /^[A-Pa-p]+$/;
+export function isValidAP(s: string): boolean { return AP_RE.test(s); }
+── src/lib/extraDigit.ts (head -30) ──
+/**
+ * Digital root + mapeo {extra} a sistema solar (inglés).
+ *
+ *   extraDigit(89756456) === 5    // 8+9+7+5+6+4+5+6=50 → 5+0=5 → jupiter
+ *   extraDigit(9000)     === 9    // → pluto
+ *
+ *   ctrl  → extra = extraDigit(telegram_id)   (privado)
+ *   admin → extra = extraDigit(chat_id)       (grupo)
+ */
+export function extraDigit(n: number): number {
+  n = Math.abs(Math.trunc(n));
+  if (n === 0) return 0;
+  return 1 + ((n - 1) % 9);
+}
+
+/** Sistema solar · 0=sun .. 9=pluto */
+export const EXTRA_MAP: Record<number, string> = {
+  0: 'sun',
+  1: 'mercury',
+  2: 'venus',
+  3: 'earth',
+  4: 'mars',
+  5: 'jupiter',
+  6: 'saturn',
+  7: 'uranus',
+  8: 'neptune',
+  9: 'pluto',
+};
+
+export function extraName(d: number): string {
+── src/lib/phrases.ts (head -30) ──
+export type PhraseKey = 'dictamen' | 'auditoria' | 'status' | 'spqr';
+
+export const PHRASES: Record<PhraseKey, string[]> = {
+  dictamen: [
+    "⟐ DICTAMEN ⟐\nEl mainframe ha detectado niveles críticos de ternura. Pero tu sintaxis… delito menor.",
+    "⟐ DICTAMEN ⟐\nSegún el Digesto de Justiniano, error de concordancia. Multa de 3 denarios digitales.",
+    "⟐ DICTAMEN ⟐\nMi cizaña tiene glitter. Bender diría: 'Chupame la pieza, humano'.",
+    "⟐ DICTAMEN ⟐\n'La vida es una tómbola' (Tan Biónica). Tu lógica no entra en el sorteo.",
+  ],
+  auditoria: [
+    "╭─ ⟪ Auditoria ⟫\n│ Linaje: Confirmado.\n│ Estado: Kawaii pero Letal.\n│ Cita: 'Soy la chica mala' (Raven, TT).\n╰─────────────────",
+    "╭─ ⟪ Auditoria ⟫\n│ Entropía gramatical.\n│ Estudia como Ned Flanders o serás depurado.\n╰─────────────────",
+    "╭─ ⟪ Auditoria ⟫\n│ Viste 'El Rey León' +3 veces. Hakuna Matata no es cifrado.\n╰─────────────────",
+  ],
+  status: [
+    "🌸 Modo Cherry Blossom / Gótico Dual\n🧠 CPU: Jurisprudencia Activa\n🌍 Idiomas: ES|EN|PT|Latín clásico",
+    "🍭 Status: Esperando que el ente haga algo útil. 'Ay, caramba!' (Homero)",
+    "📊 Kernel argentino-brasileño activo. Mate y samba equilibrio.",
+  ],
+  spqr: [
+    "⚖️ SPQR • EX NIHILO NIHIL FIT.\nIgnorar el latín es reo de aesthetica negligencia.",
+    "🏛️ D. I. 1.1.1 'Honeste vivere, alterum non laedere, suum cuique tribuere'.",
+    "📜 Senatus consultum: 'Bello e Ben Fatto' obligatorio bajo pena de damnatio memoriae.",
+  ],
+};
+
+export const EASTER_EGGS = [
+  "🦁 'Hakuna Matata, la auditoría no espera' — Timón (El Rey León)",
+  "🤖 'Bite my shiny metal... ley romana' — Bender (Futurama)",
+  "🍩 'Excelente, no diré nada hasta que veas mi factura' — Lionel Hutz (Los Simpsons)",
+── src/lib/supabase.ts (head -30) ──
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+const URL  = import.meta.env.VITE_SUPABASE_URL  as string | undefined;
+const KEY  = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+export const hasSupabase = Boolean(URL && KEY);
+
+export const sb: SupabaseClient | null = hasSupabase
+  ? createClient(URL!, KEY!, { auth: { persistSession: false } })
+  : null;
+
+export interface VerifyResponse {
+  ok: boolean;
+  reason?: string;
+  session_token?: string;
+  user_id?: number;
+  kind?: string;
+  name_page?: string;
+  hexa?: number;
+  expires_at?: number;
+}
+
+export interface ValidateResponse {
+  ok: boolean;
+  user_id?: number;
+  kind?: string;
+  name_page?: string;
+  expires_at?: number;
+}
+── src/lib/urlParser.ts (head -30) ──
+import { apToAccessLevel, isValidAP } from './apHex';
+import { extraDigit } from './extraDigit';
+
+export type UrlKind = 'ctrl' | 'admin' | 'stats' | 'stealth' | 'game';
+
+export interface ParsedUrl {
+  accessLevel: number;
+  accessLevelAP: string;
+  kind: UrlKind;
+  /** Segmento crudo en la URL (ctrl/admin/stats/stealth/<game>). */
+  kindSegment: string;
+  /** chat_id: null en ctrl, obligatorio en admin, opcional en game. */
+  chatId: number | null;
+  /** {extra}: 0-9. Solo ctrl/admin. */
+  extra: number | null;
+  /** Nombre legible del {extra} (sun, mercury, ...). */
+  extraName: string | null;
+  /** name_page: ctrl/admin/stats/stealth. */
+  namePage: string | null;
+  /** game_page: solo games. */
+  gamePage: string | null;
+  telegramId: number;
+  token: string | null;
+  query: string | null;
+  parsedAt: number;
+}
+
+export type ParseResult =
+  | { ok: true; url: ParsedUrl }
+  | { ok: false; reason: ParseError };
+
+── 7. router/ ──
+RouteGuard.tsx
+scripts_discovery.sh: line 29: syntax error near unexpected token `2'

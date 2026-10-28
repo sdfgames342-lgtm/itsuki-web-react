@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+# Env
+.env
+.env.*
+!.env.example
+# Python
+__pycache__/
+*.pyc
+*.pyo
+# Logs / OS
+*.log
+.DS_Store
+# Bot runtime
+data/itsuki.db
+data/logs/
+data/*.png
+node_modules
+dist
+.bak_*/
