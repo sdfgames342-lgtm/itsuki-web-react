@@ -7,7 +7,7 @@ export interface GameEntry {
 }
 
 export const GAMES: Record<string, GameEntry> = {
-  truco: { Component: lazy(() => import('./truco')), title: 'Truco' },
+  truco: { Component: lazy(() => import("./truco/TrucoGame").then((m) => ({ default: m.TrucoGame }))), title: 'Truco' },
 };
 
 export function getGame(name: string | null | undefined): GameEntry | null {
