@@ -1,15 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Itsuki</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Itsuki - Bot Determinista</title>
+  <meta name="description" content="Bot de Telegram determinista. Sin LLMs.">
+  <meta property="og:title" content="Itsuki - Bot Determinista">
+  <meta property="og:description" content="Confesiones anonimas, editor socratico, minijuegos. Sin LLMs.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="./" class="brand">Itsuki</a>
+      <nav class="site-nav">
+        <a href="#features">Features</a>
+        <a href="#commands">Comandos</a>
+        <a href="https://t.me/ItsukiBot" class="nav-cta" target="_blank" rel="noopener">Telegram</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Bot determinista.<br><em>Sin LLMs. Sin APIs pagas.</em></h1>
+      <p class="hero-sub">Personalidad academica argentina. Confesiones anonimas. Editor socratico. Todo local.</p>
+      <div class="hero-actions">
+        <a href="https://t.me/ItsukiBot" class="btn btn-primary" target="_blank" rel="noopener">Probar en Telegram</a>
+        <a href="#features" class="btn btn-ghost">Ver features</a>
+      </div>
+      <div class="hero-meta">
+        <code>aiogram v3</code>
+        <code>SQLite WAL</code>
+        <code>Pillow</code>
+      </div>
+    </section>
+
+    <section id="features" class="section">
+      <h2>Caracteristicas</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Confesiones anonimas</h3>
+          <p>Tarjetas con Pillow. Moderacion por admin. El autor nunca se revela.</p>
+        </article>
+        <article class="card">
+          <h3>Motor determinista</h3>
+          <p>Perfilador conductual de 3 capas en SQLite. Analisis lexico local.</p>
+        </article>
+        <article class="card">
+          <h3>Editor socratico</h3>
+          <p>Correccion gramatical y deteccion de falacias con audit trail.</p>
+        </article>
+        <article class="card">
+          <h3>Minijuegos</h3>
+          <p>Trivia de logica, filosofia y letras. Leaderboard global.</p>
+        </article>
+        <article class="card">
+          <h3>Telegram Stars</h3>
+          <p>Informes VIP, white-label y saltar cola. Sin tarjetas externas.</p>
+        </article>
+        <article class="card">
+          <h3>VIP por Boosts</h3>
+          <p>Los grupos con boosts desbloquean features gratis.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="commands" class="section">
+      <h2>Comandos</h2>
+      <div class="commands-grid">
+        <div class="cmd-group">
+          <h3>Base</h3>
+          <ul>
+            <li><code>/start</code> <span>presentacion</span></li>
+            <li><code>/help</code> <span>comandos</span></li>
+            <li><code>/ping</code> <span>latencia</span></li>
+          </ul>
+        </div>
+        <div class="cmd-group">
+          <h3>Perfil</h3>
+          <ul>
+            <li><code>/perfil</code> <span>identidad</span></li>
+            <li><code>/arquetipo</code> <span>clasificacion</span></li>
+            <li><code>/stats</code> <span>metricas</span></li>
+          </ul>
+        </div>
+        <div class="cmd-group">
+          <h3>Confesiones</h3>
+          <ul>
+            <li><code>/confesar</code> <span>anonima</span></li>
+            <li><code>/confesiones_on</code> <span>admin</span></li>
+            <li><code>/confesiones_off</code> <span>admin</span></li>
+          </ul>
+        </div>
+        <div class="cmd-group">
+          <h3>Monetizacion</h3>
+          <ul>
+            <li><code>/report</code> <span>informe VIP</span></li>
+            <li><code>/buy</code> <span>catalogo Stars</span></li>
+            <li><code>/booststatus</code> <span>boosts</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <h2>Listo para probarlo?</h2>
+      <p>Abri el bot en Telegram. Sin descargas.</p>
+      <a href="https://t.me/ItsukiBot" class="btn btn-primary btn-lg" target="_blank" rel="noopener">Abrir @ItsukiBot</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Itsuki - Bot determinista</p>
+    <p class="footer-small">Sin LLMs. Sin APIs pagas.</p>
+  </footer>
+
+  <script src="assets/main.js"></script>
 </body>
 </html>

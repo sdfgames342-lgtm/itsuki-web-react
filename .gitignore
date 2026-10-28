@@ -1,24 +1,16 @@
-# Node
+# Build artifacts
 node_modules/
 dist/
 build/
 .vite/
-*.tsbuildinfo
+tsconfig.tsbuildinfo
+*.bak.*
+*.log
+
 # Env
 .env
 .env.*
-!.env.example
-# Python
-__pycache__/
-*.pyc
-*.pyo
-# Logs / OS
-*.log
+
+# OS
 .DS_Store
-# Bot runtime
-data/itsuki.db
-data/logs/
-data/*.png
-node_modules
-dist
-.bak_*/
+Thumbs.db
